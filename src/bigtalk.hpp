@@ -47,6 +47,7 @@ public:
   cons cons_type;
   cons integer_type;
   void build();
-  void eval(cons code);
+  cons eval(cons code);
+  static ast * current;
 };
 

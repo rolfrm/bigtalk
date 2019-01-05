@@ -153,17 +153,21 @@ void test_bigtalk(){
   free_table = table::create("free_cons");
   free_table.add_column<size_t>("index");
   
+  
   ast a = ast();
-  cons cs[20];
+  a.build();
+  
+
+  cons cs[3];
   for(cons & con : cs){
     con = a.add_cons();
   }
    for(cons & con : cs){
      con.dispose();
   }
-
-  a.build();
-  a.print();
+  
+   //a.print();
+   printf("Bigtalk test PASS\n");
 }
   
 int test(){
