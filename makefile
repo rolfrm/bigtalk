@@ -1,5 +1,5 @@
 OPT = -g3 -O0
-LIB_SOURCES1 = main.cpp
+LIB_SOURCES1 = main.cpp allocator.cpp test.cpp view.cpp table.cpp bigtalk.cpp
 LIB_SOURCES = $(addprefix src/, $(LIB_SOURCES1))
 CC = g++
 TARGET = run.exe
