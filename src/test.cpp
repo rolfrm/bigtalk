@@ -149,7 +149,19 @@ void test_bigtalk(){
   current_table.add_column<size_t>("type");
   current_table.add_column<size_t>("next");
   current_table.add_column<bool>("free");
+
+  free_table = table::create("free_cons");
+  free_table.add_column<size_t>("index");
+  
   ast a = ast();
+  cons cs[20];
+  for(cons & con : cs){
+    con = a.add_cons();
+  }
+   for(cons & con : cs){
+     con.dispose();
+  }
+
   a.build();
   a.print();
 }

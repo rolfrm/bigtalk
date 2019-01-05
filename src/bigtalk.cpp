@@ -13,7 +13,7 @@
 #include "bigtalk.hpp"
 
 table current_table;
-
+table free_table;
 void cons::check_freed(){
   cons_view view = current_table.get_view<cons_view>();
   if(view.freed[index])
@@ -70,16 +70,36 @@ bool cons::operator!=(cons & b){
 bool cons::operator==(cons & b){
   return index == b.index;
 } 
-  
+
+struct free_view{
+  size_t count;
+  view<size_t> index;
+};
+
+void cons::dispose(){
+  disposed = true;
+  auto view = current_table.get_view<cons_view>();
+  view.freed[index] = true;
+  auto free_index = free_table.add_row();
+  auto free_col = free_table.get_view<free_view>();
+  free_col.index[free_index] = index;
+}
 
 cons ast::add_cons(){
-  size_t index = current_table.add_row();
+
+  size_t index;
+  if(free_table.get_row_count() > 0){
+    auto free_col = free_table.get_view<free_view>();
+    index = free_col.index[free_col.count - 1];
+    free_table.resize(free_table.get_row_count() - 1);
+  }else{
+    index = current_table.add_row();
+  }
   cons_view view = current_table.get_view<cons_view>();
-  printf("VIEW: %i\n", view.count);
   view.value[index] = 0;
   view.next[index] = 0;
   view.type[index] = 0;
-  view.type[index] = 0;
+  view.freed[index] = 0;
   return cons(index);
 }
 

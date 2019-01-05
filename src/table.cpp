@@ -75,7 +75,6 @@ void table::resize(size_t new_row_count){
 size_t table::add_row(){
   size_t r = info->row_count;
   resize(r + 1);
-  printf("add_row: %i / %i\n", r, info->row_count);
   return r;
 }
 

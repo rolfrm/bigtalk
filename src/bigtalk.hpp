@@ -15,11 +15,12 @@ struct cons_view {
   view<bool> freed;
 };
 
-
+extern table free_table;
 extern table current_table;
 
 class cons{
   size_t index;
+  bool disposed;
 public:
   void check_freed();
   cons(size_t index);
@@ -34,6 +35,7 @@ public:
   void set_next(cons next);
   bool operator!=(cons & b);
   bool operator==(cons & b);
+  void dispose();
 };
 
 class ast {

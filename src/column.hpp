@@ -12,13 +12,6 @@ template<typename T>
 class column : public column_base{
 public:
 
-  void * operator new(size_t s, column<T>*& self){
-    for(size_t i = 0; i < s / sizeof(column<T>); i++){
-      self[i] = column<T>();
-    }
-    return self;
-  }
-
   virtual const std::type_info & get_column_type(){
     return typeid(T);
   }
