@@ -1,0 +1,29 @@
+tr {
+    border: 0px;
+    background: #9999FFFF;
+}
+td{
+    border: 0;
+    padding: 0;
+}
+
+table{
+    border-spacing: 0;
+}
+
+#app {
+   
+    
+}
+
+.cell {
+	background: #CCCCFFFF;
+	padding: 5px;
+	border: 0;	
+    }
+input {
+    padding: 0rem 0rem;
+    border: 0;
+    color:#000;
+    background:Transparent;   
+}
