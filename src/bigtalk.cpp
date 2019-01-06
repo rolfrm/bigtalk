@@ -69,7 +69,11 @@ bool cons::operator!=(cons & b){
 }
 bool cons::operator==(cons & b){
   return index == b.index;
-} 
+}
+
+size_t cons::get_index(){
+  return index;
+}
 
 struct free_view{
   size_t count;
@@ -145,13 +149,13 @@ cons add_things(cons args){
 
 void ast::build(){
   current = this;
-  cons null = add_cons();
-  cons root = add_cons();
+  null = add_cons();
+  root = add_cons();
   root.set_next(null);
-  cons type = add_cons();
+  type_type = add_cons();
   cons symbol_type = add_cons();
   integer_type = add_cons();
-  integer_type.set_type(type);
+  integer_type.set_type(type_type);
   cons_type = add_cons();
   fcn_type = add_cons();
   cons print_fcn = add_cons();
@@ -162,9 +166,9 @@ void ast::build(){
   add_fcn.set_type(fcn_type);
   add_fcn.set_value((size_t) &add_things);
 
-  symbol_type.set_type(type);
-  type.set_type(type);
-  cons_type.set_type(type);
+  symbol_type.set_type(type_type);
+  type_type.set_type(type_type);
+  cons_type.set_type(type_type);
   root.set_type(cons_type);
 
   try{
@@ -246,4 +250,49 @@ cons ast::eval(cons code){
   }
   cons (* fptr)(cons args) = (cons (*)(cons args)) fcn.get_value();
   return fptr(first);
+}
+
+bigtalk_context::~bigtalk_context(){
+
+}
+
+void bigtalk_context::make_current(){
+  ast::current = &this->ast;
+  free_table = this->free_table;
+  current_table = this->current_table;
+}
+
+bigtalk_context * bigtalk_initialize(){
+  current_table = table::create("cons");
+  current_table.add_column<size_t>("value");
+  current_table.add_column<size_t>("type");
+  current_table.add_column<size_t>("next");
+  current_table.add_column<bool>("free");
+
+  free_table = table::create("free_cons");
+  free_table.add_column<size_t>("index");
+
+  auto * bt = new bigtalk_context();
+  bt->free_table = free_table;
+  bt->current_table = current_table;
+  bt->ast = ast();
+  bt->make_current();
+  bt->ast.build();
+  return bt;
+}
+
+void bigtalk_iterate_meta(bigtalk_context * bt, void (* f)(size_t id, const char * name, void * userptr), void * userptr){
+  ast * ast = &bt->ast;
+  f(ast->null.get_index(), "null", userptr);
+  f(ast->fcn_type.get_index(), "fcn_type", userptr);
+  f(ast->cons_type.get_index(), "cons_type", userptr);
+  f(ast->integer_type.get_index(), "integer_type", userptr);
+  f(ast->type_type.get_index(), "type_type", userptr);
+  f(ast->root.get_index(), "root", userptr);
+}
+
+void bigtalk_get_cons(__attribute__((unused)) bigtalk_context * bt, size_t id, void (* f)(size_t id, size_t next, size_t type, size_t value, void * userdata), void * userdata){
+
+  cons cns = cons(id);
+  f(cns.get_index(), cns.get_next().get_index(), cns.get_type().get_index(), cns.get_value(), userdata);
 }

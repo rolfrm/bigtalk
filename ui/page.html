@@ -12,20 +12,19 @@
 	{{ getMessage2() }}
       </div>
       <button v-on:click="toggleSeen"> {{getMessage()}} </button>
+      <button v-on:click="loadBigTalk">Load Bigtalk</button>
       
-      <table>
+      <table >
 	<!--
 	<thead>
 
 	</thead>-->
-	<tbody>
+	<tbody  v-on:change="process()"  v-on:keydown.right="moveFocusRight" v-on:keydown.left="moveFocusRight" v-on:keydown.up="moveFocusRight" v-on:keydown.down="moveFocusRight">
 	  <tr v-for="entry in columns">
 	    <td v-for="value in entry.values">
-	      <div class="cell" v-if="value.value != null"
-		   >
-		<input
-		  v-bind:style="{background: value.index == focus_cell.x ? 'red' : 'blue'}"
-		       v-model="value.value" v-on:keydown.right="moveFocusRight"/>
+	      <div v-bind:class="[value.selected() ? 'cell2' : 'cell']">
+		<!--		  -->
+		<input v-model="value.value"/>
 		</div>
 	    </td>
 	  </tr>

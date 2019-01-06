@@ -33,6 +33,7 @@ public:
   void set_value(cons cns);
   void set_value(size_t value);
   void set_next(cons next);
+  size_t get_index();
   bool operator!=(cons & b);
   bool operator==(cons & b);
   void dispose();
@@ -46,8 +47,26 @@ public:
   cons fcn_type;
   cons cons_type;
   cons integer_type;
+  cons type_type;
+  cons root;
   void build();
   cons eval(cons code);
   static ast * current;
 };
 
+
+
+class bigtalk_context{
+
+  virtual ~bigtalk_context();
+public:
+  table free_table;
+  table current_table;
+  ::ast ast;
+
+  void make_current();
+};
+
+bigtalk_context * bigtalk_initialize();
+void bigtalk_iterate_meta(bigtalk_context * bt, void (* f)(size_t id, const char * name, void * userptr), void * userptr);
+void bigtalk_get_cons(bigtalk_context * bt, size_t id, void (* f)(size_t id, size_t next, size_t type, size_t value, void * userdata), void * userdata);

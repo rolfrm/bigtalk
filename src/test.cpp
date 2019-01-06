@@ -143,31 +143,25 @@ void test_table(){
   printf("test table PASS\n");
 }
 
+void printit(size_t id, const char * name, void * userptr){
+  printf("%i %s %i\n", id, name, userptr);
+}
+
 void test_bigtalk(){
-  current_table = table::create("cons");
-  current_table.add_column<size_t>("value");
-  current_table.add_column<size_t>("type");
-  current_table.add_column<size_t>("next");
-  current_table.add_column<bool>("free");
-
-  free_table = table::create("free_cons");
-  free_table.add_column<size_t>("index");
+  auto bt = bigtalk_initialize();
   
+  bigtalk_iterate_meta(bt, printit, NULL);
   
-  ast a = ast();
-  a.build();
-  
-
   cons cs[3];
   for(cons & con : cs){
-    con = a.add_cons();
+    con = bt->ast.add_cons();
   }
-   for(cons & con : cs){
-     con.dispose();
+  for(cons & con : cs){
+    con.dispose();
   }
   
-   //a.print();
-   printf("Bigtalk test PASS\n");
+  //a.print();
+  printf("Bigtalk test PASS\n");
 }
   
 int test(){
