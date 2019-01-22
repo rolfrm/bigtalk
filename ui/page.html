@@ -13,18 +13,24 @@
       </div>
       <button v-on:click="toggleSeen"> {{getMessage()}} </button>
       <button v-on:click="loadBigTalk">Load Bigtalk</button>
+      <button v-on:click="updateTable">UpdateTable</button>
       
       <table >
 	<!--
 	<thead>
 
 	</thead>-->
-	<tbody  v-on:change="process()"  v-on:keydown.right="moveFocusRight" v-on:keydown.left="moveFocusRight" v-on:keydown.up="moveFocusRight" v-on:keydown.down="moveFocusRight">
+	<tbody  v-on:change="process()"
+		v-on:keydown.right="moveFocusRight"
+		v-on:keydown.left="moveFocusRight"
+		v-on:keydown.up="moveFocusRight"
+		v-on:keydown.down="moveFocusRight"
+		v-on:keydown="checkFocus">
 	  <tr v-for="entry in columns">
 	    <td v-for="value in entry.values">
 	      <div v-bind:class="[value.selected() ? 'cell2' : 'cell']">
 		<!--		  -->
-		<input v-model="value.value"/>
+		<input v-model="value.value" v-on:click="takeFocus(value)"/>
 		</div>
 	    </td>
 	  </tr>

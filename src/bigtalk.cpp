@@ -147,25 +147,83 @@ cons add_things(cons args){
   return result;
 }
 
+cons ast::stringify(const char * str){
+  int len = strlen(str) + 1;
+  size_t size_len  = (len - 1) / sizeof(size_t) + 1;
+  size_t newv[size_len] = {0};
+  memcpy(newv, str, len);
+  cons start = add_cons();
+  cons it = start;
+  for(size_t i = 0; i < size_len; i++){
+    it.set_value(newv[i]);
+    it.set_type(string_type);
+    cons it2 = add_cons();
+    it.set_next(it2);
+    it = it2;
+  }
+  return start;
+}
+
+void ast::root_add(cons thing){
+  auto new_end = add_cons();
+  root_end.set_next(new_end);
+  root_end = new_end;
+  
+  root_end.set_value(thing);
+  root_end.set_type(cons_type);
+}
+
 void ast::build(){
   current = this;
   null = add_cons();
   root = add_cons();
-  root.set_next(null);
+  root_end = root;
+  
   type_type = add_cons();
-  cons symbol_type = add_cons();
+  symbol_type = add_cons();
   integer_type = add_cons();
   integer_type.set_type(type_type);
   cons_type = add_cons();
+  name_type = add_cons();
+  names = add_cons();
+  names_last = names;
   fcn_type = add_cons();
-  cons print_fcn = add_cons();
-  print_fcn.set_type(fcn_type);
-  print_fcn.set_value((size_t) &print_thing);
+  string_type = add_cons();
+  
+  cons print_symbol = add_cons();
+  print_symbol.set_type(symbol_type);
+  
+  {
+    cons print_fcn = add_cons();
+    print_fcn.set_type(fcn_type);
+    print_fcn.set_value((size_t) &print_thing);
+    print_symbol.set_value(print_fcn);
 
+    cons print_symbol_name = add_cons();
+    print_symbol_name.set_type(name_type);
+    print_symbol_name.set_value(print_symbol);
+    print_symbol_name.set_next(stringify("printprintprintt"));
+    root_add(print_symbol_name);
+    
+  }
+
+
+  
   cons add_fcn = add_cons();
   add_fcn.set_type(fcn_type);
   add_fcn.set_value((size_t) &add_things);
 
+  cons add_symbol = add_cons();
+  add_symbol.set_type(symbol_type);
+  add_symbol.set_value(add_fcn);
+  {
+    cons add_symbol_name = add_cons();
+    add_symbol_name.set_type(name_type);
+    add_symbol_name.set_value(add_symbol);
+    add_symbol_name.set_next(stringify("+"));
+    root_add(add_symbol_name);
+  }
+  
   symbol_type.set_type(type_type);
   type_type.set_type(type_type);
   cons_type.set_type(type_type);
@@ -174,7 +232,7 @@ void ast::build(){
   try{
     // (print 123 1233 12333 (+ 15 32))
     cons code1 = add_cons();
-    code1.set_value(print_fcn);
+    code1.set_value(print_symbol);
     code1.set_type(cons_type);
 
     cons code2 = add_cons();
@@ -214,6 +272,8 @@ void ast::build(){
     code4.set_next(code8);
     
     eval(code1);
+    root_add(code1);
+
   }catch (std::runtime_error e){
     printf("ERROR: %s\n", e.what());
   }
@@ -225,6 +285,9 @@ cons ast::eval(cons code){
   }
     
   cons fcn = code.get_value_as_cons();
+  if(fcn.get_type() == symbol_type){
+    fcn = fcn.get_value_as_cons();
+  }
   if(fcn.get_type() != fcn_type)
     throw std::runtime_error("can only execute function types");
   cons arg0 = null;
@@ -248,6 +311,7 @@ cons ast::eval(cons code){
     arg0 = arg;
     next = next.get_next();
   }
+  
   cons (* fptr)(cons args) = (cons (*)(cons args)) fcn.get_value();
   return fptr(first);
 }
@@ -289,10 +353,24 @@ void bigtalk_iterate_meta(bigtalk_context * bt, void (* f)(size_t id, const char
   f(ast->integer_type.get_index(), "integer_type", userptr);
   f(ast->type_type.get_index(), "type_type", userptr);
   f(ast->root.get_index(), "root", userptr);
+  f(ast->symbol_type.get_index(), "symbol_type", userptr);
+  f(ast->name_type.get_index(), "name_type", userptr);
+  
 }
 
 void bigtalk_get_cons(__attribute__((unused)) bigtalk_context * bt, size_t id, void (* f)(size_t id, size_t next, size_t type, size_t value, void * userdata), void * userdata){
 
   cons cns = cons(id);
   f(cns.get_index(), cns.get_next().get_index(), cns.get_type().get_index(), cns.get_value(), userdata);
+}
+
+ccons bigtalk_get_ccons(size_t id){
+  
+  cons cns = cons(id);
+  ccons c;
+  c.id = id;
+  c.value = cns.get_value();
+  c.type = cns.get_type().get_index();
+  c.next = cns.get_next().get_index();
+  return c;
 }

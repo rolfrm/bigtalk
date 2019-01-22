@@ -1,7 +1,7 @@
 #include "stdlib.h"
 #include "string.h"
 #include "stdio.h"
-#include <assert.h>
+#include <cassert>
 #include <typeinfo>
 #include <new>
 #include "allocator.hpp"
@@ -143,7 +143,12 @@ void test_table(){
   printf("test table PASS\n");
 }
 
+
+size_t root = 0;
 void printit(size_t id, const char * name, void * userptr){
+  if(strcmp(name, "root") == 0){
+      root = id;
+    }
   printf("%i %s %i\n", id, name, userptr);
 }
 
@@ -159,7 +164,10 @@ void test_bigtalk(){
   for(cons & con : cs){
     con.dispose();
   }
-  
+
+  bigtalk_iterate_meta(bt, printit, NULL);
+  assert(root != 0);
+  bigtalk_get_cons(bt, root
   //a.print();
   printf("Bigtalk test PASS\n");
 }

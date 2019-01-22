@@ -1,4 +1,4 @@
-var ws = new WebSocket('ws://localhost:8888/');
+var ws = new WebSocket('ws://localhost:9000/');
 
 var app = new Vue({
   el: '#app',
@@ -21,6 +21,22 @@ var app = new Vue({
 	getMessage2: function(){
 	    return this.message;
 	},
+	takeFocus: function(value){
+	    this.focus_cell.x = value.index;
+	    this.focus_cell.y = value.col.index;
+	},
+	getFocusedNode: function(evt){
+
+	    var td = evt.currentTarget.childNodes[this.focus_cell.y].childNodes[this.focus_cell.x]
+	    return td;
+	},
+	checkFocus: function(evt){
+	    var control = this.getFocusedNode(evt).firstChild.firstChild
+	    if(control != document.activeElement)
+		control.focus()
+
+	    //	    evt.preventDefault();
+	},
 	moveFocusRight: function(thing){
 	    if(!thing.ctrlKey) return;
 	    var dx = 0;
@@ -36,23 +52,25 @@ var app = new Vue({
 	    
 	    this.focus_cell.x = this.focus_cell.x + dx;
 	    this.focus_cell.y = this.focus_cell.y + dy;
-	    var td = thing.currentTarget.childNodes[this.focus_cell.y].childNodes[this.focus_cell.x]
+	    var td = this.getFocusedNode(thing);
 	    //td.firstChild.firstChild.focus()
+	    
 	    thing.currentTarget.firstChild.focus()
 	    thing.preventDefault()
 	},
-	load: function (){
+	load: function (matrix){
 	    var new_columns =[];
-	    for(var i = 0; i < 20; i++){
+	    for(var i = 0; i < matrix.length; i++){
+		var d = matrix[i];
 		var col = {
 		    app: this,
 		}
 		col.index = i;
 		col.values = []
-		for(var j = 0; j < 5; j++){
+		for(var j = 0; j < d.length; j++){
 		    col.values[j] = {
 			index: j,
-			value: (j + 1) * (i + 1),
+			value: d[j],
 			col: col,
 			selected: function(){
 			    //console.log(this.app)
@@ -60,8 +78,6 @@ var app = new Vue({
 			}
 
 		    }
-		    if(j == 3 && i < 5)
-			col.values[j].value = null;
 		}
 		new_columns[i] =col;
 	    }
@@ -70,6 +86,11 @@ var app = new Vue({
 	},
 	loadBigTalk: function(){
 	    ws.send("get_meta\n");
+	},
+	updateTable
+	: function(){
+	    var mat = app_update_scope();
+	    this.load(mat)
 	},
 	getSubs: function(subs){
 	    ws.send("get_sub:" + subs.join(","));
@@ -83,19 +104,106 @@ var app = new Vue({
     }
 })
 
-app.load();
+app.load([[1,2,3],[4,5,6]]);
+var names = {};
+var scope = {};
+var meta = {};
+var matrix = [];
+function arrange_calls(row, column, id){
+    while(matrix.length <= row)
+	matrix.push([]);
+    while(matrix[row].length <= column)
+	matrix[row].push("");
+    if(scope[id].type == meta.name_type.id){
+	console.log("Found name type!");
+    }
+    console.log(id);
+    console.log("NAME(ID): " + scope[id].value + " " + id + "?" + scope[id].type + " " + meta.name_type.id);
 
+
+    if(scope[id].type == meta.cons_type.id && scope[id].value != "0"){
+	row = arrange_calls(row, column + 1, scope[id].value);
+	while(matrix.length <= row)
+	    matrix.push([]);
+	while(matrix[row].length <= column)
+	    matrix[row].push("");
+    }
+    matrix[row][column] = scope[id].value;
+    
+    while(matrix.length <= row)
+	matrix.push([]);
+    while(matrix[row].length <= column)
+	matrix[row].push("");
+    
+    matrix[row][column] = scope[id].value;
+    var next = scope[id].next;
+    
+    column += 1;
+    while(next != "0"){
+	while(matrix.length <= row)
+	    matrix.push([]);
+	while(matrix[row].length <= column)
+	    matrix[row].push("");
+	matrix[row][column] = scope[next].value;
+
+
+	if(scope[next].type == meta.cons_type.id){
+	    row = arrange_calls(row, column, scope[next].value);
+	}
+
+	
+	row += 1
+	next = scope[next].next;
+    }
+    
+    return row; 
+}
+
+function app_update_scope(){
+    console.log(meta);
+    console.log(scope);
+    matrix = []
+    arrange_calls(0,0,meta.root.id);
+    return matrix;
+}
+
+
+function handle_message(obj){
+    console.log(obj)    
+    if(obj.call == "get_meta"){
+	meta[obj.name] = obj;
+	console.log("Got meta..\n");
+	if(obj.name == "root"){
+	    ws.send("get_sub " + obj.id);
+	}
+    }
+    if(obj.call == "get"){
+	delete obj.call;
+	scope[obj.id] = obj;
+	if(obj.type == meta.cons_type.id){
+	    ws.send("get_sub " + obj.value);	    
+	}
+	if(obj.next != "0"){
+	    ws.send("get_sub " + obj.next);
+	}
+	//app_update_scope();
+    }
+    
+}
 
 ws.onmessage = function(event) {
     
     console.log('response:\'' + event.data +'\'');
     
     if(event.data.indexOf("{") == 0){
+	var json = 0;
 	try{
-	console.log(JSON.parse(event.data))
-    }catch(err){
-	console.log('error' + err);
-    }
+	    json = JSON.parse(event.data);
+	 
+	}catch(err){
+	    console.log('error' + err);
+	}
+	   handle_message(json);
     }
 };
 
