@@ -157,9 +157,12 @@ cons ast::stringify(const char * str){
   for(size_t i = 0; i < size_len; i++){
     it.set_value(newv[i]);
     it.set_type(string_type);
-    cons it2 = add_cons();
-    it.set_next(it2);
-    it = it2;
+    if(i < size_len - 1) {
+      cons it2 = add_cons();
+      it.set_next(it2);
+      it2.set_next(0);
+      it = it2;
+    }
   }
   return start;
 }
@@ -189,10 +192,11 @@ void ast::build(){
   names_last = names;
   fcn_type = add_cons();
   string_type = add_cons();
+  symbol_ref_type = add_cons();
   
   cons print_symbol = add_cons();
   print_symbol.set_type(symbol_type);
-  
+
   {
     cons print_fcn = add_cons();
     print_fcn.set_type(fcn_type);
@@ -202,8 +206,9 @@ void ast::build(){
     cons print_symbol_name = add_cons();
     print_symbol_name.set_type(name_type);
     print_symbol_name.set_value(print_symbol);
-    print_symbol_name.set_next(stringify("printprintprintt"));
-    root_add(print_symbol_name);
+    print_symbol_name.set_next(stringify("print"));
+    //
+    print_symbol.set_next(print_symbol_name);
     
   }
 
@@ -221,7 +226,8 @@ void ast::build(){
     add_symbol_name.set_type(name_type);
     add_symbol_name.set_value(add_symbol);
     add_symbol_name.set_next(stringify("+"));
-    root_add(add_symbol_name);
+    add_symbol.set_next(add_symbol_name);
+    //root_add(add_symbol_name);
   }
   
   symbol_type.set_type(type_type);
@@ -233,7 +239,7 @@ void ast::build(){
     // (print 123 1233 12333 (+ 15 32))
     cons code1 = add_cons();
     code1.set_value(print_symbol);
-    code1.set_type(cons_type);
+    code1.set_type(symbol_ref_type);
 
     cons code2 = add_cons();
     code2.set_value(123);
@@ -252,8 +258,8 @@ void ast::build(){
     code3.set_next(code4);
 
     cons code5 = add_cons();
-    code5.set_value(add_fcn);
-    code5.set_type(cons_type);
+    code5.set_value(add_symbol);
+    code5.set_type(symbol_ref_type);
 
     cons code6 = add_cons();
     code6.set_type(integer_type);
@@ -285,8 +291,10 @@ cons ast::eval(cons code){
   }
     
   cons fcn = code.get_value_as_cons();
-  if(fcn.get_type() == symbol_type){
+  if(fcn.get_type() == symbol_ref_type){
     fcn = fcn.get_value_as_cons();
+  }else{
+    throw std::runtime_error("first cons must be a symbol");
   }
   if(fcn.get_type() != fcn_type)
     throw std::runtime_error("can only execute function types");
@@ -355,14 +363,16 @@ void bigtalk_iterate_meta(bigtalk_context * bt, void (* f)(size_t id, const char
   f(ast->root.get_index(), "root", userptr);
   f(ast->symbol_type.get_index(), "symbol_type", userptr);
   f(ast->name_type.get_index(), "name_type", userptr);
+  f(ast->string_type.get_index(), "string_type", userptr);
+  f(ast->symbol_ref_type.get_index(), "symbol_ref_type", userptr);
   
 }
-
-void bigtalk_get_cons(__attribute__((unused)) bigtalk_context * bt, size_t id, void (* f)(size_t id, size_t next, size_t type, size_t value, void * userdata), void * userdata){
+/*
+void bigtalk_get_cons(ribute__((unused)) bigtalk_context * bt, size_t id, void (* f)(size_t id, size_t next, size_t type, size_t value, void * userdata), void * userdata){
 
   cons cns = cons(id);
   f(cns.get_index(), cns.get_next().get_index(), cns.get_type().get_index(), cns.get_value(), userdata);
-}
+  }*/
 
 ccons bigtalk_get_ccons(size_t id){
   

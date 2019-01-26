@@ -145,11 +145,75 @@ void test_table(){
 
 
 size_t root = 0;
+size_t cons_type = 0;
+size_t name_type = 0;
+size_t string_type = 0;
+size_t symbol_type = 0;
+size_t integer_type = 0;
+size_t symbol_ref_type = 0;
 void printit(size_t id, const char * name, void * userptr){
   if(strcmp(name, "root") == 0){
       root = id;
-    }
+  }else if(strcmp(name, "cons_type") == 0){
+    cons_type = id;
+  }else if(strcmp(name, "name_type") == 0){
+    name_type = id;
+  }else if(strcmp(name, "string_type") == 0){
+    string_type = id;
+  }else if(strcmp(name, "symbol_type") == 0){
+    symbol_type = id;
+  }else if(strcmp(name, "integer_type") == 0){
+    integer_type = id;
+  }else if(strcmp(name, "symbol_ref_type") == 0){
+    symbol_ref_type = id;
+  }
   printf("%i %s %i\n", id, name, userptr);
+}
+
+void get_string_value(size_t id, char * outbuffer){
+  size_t * buf = (size_t *) outbuffer;
+  while(id != 0){
+    ccons fst = bigtalk_get_ccons(id);
+    assert(fst.type == string_type);
+    buf[0] = fst.value;
+    buf++;
+    id = fst.next;
+    
+  }
+}
+
+void print_conses(size_t id){
+  char nameis[100];
+  printf("(");
+  bool fst = true;
+  while(id != 0){
+    if(!fst)
+      printf(" ");
+    
+    fst =false;
+    ccons fst = bigtalk_get_ccons(id);
+    if(fst.type == cons_type){
+      print_conses(fst.value);
+    }else if(fst.type == name_type){
+
+      get_string_value(fst.next, nameis);
+      printf("name%i:%s",id, nameis);
+      break;
+    }else if(fst.type == symbol_ref_type){
+
+      ccons nxt2 = bigtalk_get_ccons(fst.value);
+      ccons nxt = bigtalk_get_ccons(nxt2.next);
+      get_string_value(nxt.next, nameis);
+      printf("%s", nameis);
+     
+    }else if(fst.type == integer_type){
+      printf("%i", fst.value);
+    }else{
+      printf("[%i(%i %i %i)]", fst.value, fst.type, fst.id, id);
+    }
+    id = fst.next;
+  }
+  printf(")");
 }
 
 void test_bigtalk(){
@@ -167,7 +231,8 @@ void test_bigtalk(){
 
   bigtalk_iterate_meta(bt, printit, NULL);
   assert(root != 0);
-  bigtalk_get_cons(bt, root
+  //bigtalk_get_cons(bt, root);
+  print_conses(root);
   //a.print();
   printf("Bigtalk test PASS\n");
 }

@@ -9,7 +9,7 @@ void print_meta(size_t id, const char * name, UNUSED void * userptr){
   printf("{ \"call\":\"get_meta\", \"id\":\"%llu\", \"name\":\"%s\" }\n", id, name);
 }
 
-void print_get_cons(size_t id, size_t next, size_t type, size_t value, UNUSED void * userptr){
+void print_get_cons(size_t id, size_t next, size_t type, size_t value){
   printf("{ \"call\":\"get\", \"id\":\"%llx\", \"next\":\"%llx\", \"type\":\"%llx\", \"value\":\"%llx\"}\n", id, next, type, value);
 }
 
@@ -43,7 +43,8 @@ void websocket_mode(){
 	long long id = strtoll(subline, &err, 16);
 	if(err == subline)
 	  goto error;
-	bigtalk_get_cons(bt_ctx, (size_t) id, print_get_cons, NULL);
+	auto cc = bigtalk_get_ccons(id);
+	print_get_cons(cc.id, cc.next, cc.type, cc.value);
 	char * next = strstr(subline, ",");
 	if(next != NULL){
 	  subline = next + 1;
@@ -66,6 +67,7 @@ int main(int argc, const char **argv){
   for(int i = 1; i < argc; i++){
     if(strcmp(argv[i], "--test") == 0){
       test();
+      
       char * ptr;
       size_t size;
       FILE * newstdin = open_memstream(&ptr, &size);
