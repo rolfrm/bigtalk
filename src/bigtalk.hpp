@@ -88,4 +88,5 @@ bigtalk_context * bigtalk_initialize();
 typedef void (* iterate_meta_f)(size_t id, const char * name, void * userptr);
 void bigtalk_iterate_meta(bigtalk_context * bt,iterate_meta_f f , void * userptr);
 ccons bigtalk_get_ccons(size_t id);
-
+void bigtalk_set_ccons(ccons * cons);
+void bigtalk_eval(size_t id);

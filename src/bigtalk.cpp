@@ -143,7 +143,6 @@ cons add_things(cons args){
   auto result = ast::current->add_cons();
   result.set_value(sum);
   result.set_type(ast::current->integer_type);
-  printf("Sum result: %i\n", sum);
   return result;
 }
 
@@ -286,30 +285,29 @@ void ast::build(){
 }
 
 cons ast::eval(cons code){
-  if(code.get_type() != cons_type){
-    return code;
-  }
-    
-  cons fcn = code.get_value_as_cons();
-  if(fcn.get_type() == symbol_ref_type){
-    fcn = fcn.get_value_as_cons();
+
+  cons fcn;
+  if(code.get_type() == symbol_ref_type){
+    fcn = code.get_value_as_cons().get_value_as_cons();
   }else{
     throw std::runtime_error("first cons must be a symbol");
   }
-  if(fcn.get_type() != fcn_type)
+  
+  if(fcn.get_type() != fcn_type){
     throw std::runtime_error("can only execute function types");
+  }
   cons arg0 = null;
   cons first = null;
   cons next = code.get_next();
   while(next != null){
     cons val;
     if(next.get_type() == cons_type){
-      val = eval(next.get_value());
+      val = eval(next.get_value_as_cons());
     }else{
-      val = eval(next);
+      val = next;
     }
 
-    cons arg= add_cons();
+    cons arg = add_cons();
 
     arg.set_value(val);
     arg0.set_next(arg);
@@ -383,4 +381,27 @@ ccons bigtalk_get_ccons(size_t id){
   c.type = cns.get_type().get_index();
   c.next = cns.get_next().get_index();
   return c;
+}
+
+ccons bigtalk_make_ccons(){
+  auto c = ast::current->add_cons();
+  ccons newc = ccons();
+  newc.id = c.get_index();
+  return newc;
+}
+
+void bigtalk_set_ccons(ccons * c){
+  if(c->id == 0){
+    auto newc = bigtalk_make_ccons();
+    c->id = newc.id;
+  }
+  cons cns = cons(c->id);
+  cns.set_value(c->value);
+  cns.set_type(c->type);
+  cns.set_next(c->next);
+}
+
+void bigtalk_eval(size_t id){
+  cons cns = cons(id);
+  ast::current->eval(cns);
 }

@@ -184,7 +184,8 @@ void get_string_value(size_t id, char * outbuffer){
 
 void print_conses(size_t id){
   char nameis[100];
-  printf("(");
+  printf("(", id);
+  
   bool fst = true;
   while(id != 0){
     if(!fst)
@@ -233,6 +234,28 @@ void test_bigtalk(){
   assert(root != 0);
   //bigtalk_get_cons(bt, root);
   print_conses(root);
+  printf("\n");
+  ccons adding_cons = bigtalk_get_ccons(23);
+  while(adding_cons.next != 0){
+    adding_cons = bigtalk_get_ccons(adding_cons.next);
+  }
+  ccons newcons = ccons();
+  newcons.value = 111;
+  newcons.type = integer_type;
+  bigtalk_set_ccons(&newcons);
+
+  adding_cons.next = newcons.id;
+  bigtalk_set_ccons(&adding_cons);
+  print_conses(root);
+  printf("\n");
+  bigtalk_eval(19);
+  newcons.value = 112;
+  bigtalk_set_ccons(&newcons);
+  bigtalk_eval(19);
+  newcons.value = 113;
+  bigtalk_set_ccons(&newcons);
+  bigtalk_eval(19);
+  printf("\n");
   //a.print();
   printf("Bigtalk test PASS\n");
 }

@@ -67,7 +67,7 @@ int main(int argc, const char **argv){
   for(int i = 1; i < argc; i++){
     if(strcmp(argv[i], "--test") == 0){
       test();
-      
+      return 0;
       char * ptr;
       size_t size;
       FILE * newstdin = open_memstream(&ptr, &size);
