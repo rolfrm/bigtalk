@@ -56,6 +56,7 @@ public:
   cons name_type;
   cons names;
   cons names_last;
+  cons string_ref_type;
   void build();
   cons eval(cons code);
   void root_add(cons c);

@@ -170,7 +170,7 @@ void printit(size_t id, const char * name, void * userptr){
   printf("%i %s %i\n", id, name, userptr);
 }
 
-void get_string_value(size_t id, char * outbuffer){
+static void get_string_value(size_t id, char * outbuffer){
   size_t * buf = (size_t *) outbuffer;
   while(id != 0){
     ccons fst = bigtalk_get_ccons(id);
@@ -181,6 +181,8 @@ void get_string_value(size_t id, char * outbuffer){
     
   }
 }
+
+size_t first_fcn, thirtytwo;
 
 void print_conses(size_t id){
   char nameis[100];
@@ -196,18 +198,25 @@ void print_conses(size_t id){
     if(fst.type == cons_type){
       print_conses(fst.value);
     }else if(fst.type == name_type){
-
+      
       get_string_value(fst.next, nameis);
       printf("name%i:%s",id, nameis);
       break;
     }else if(fst.type == symbol_ref_type){
-
+      
       ccons nxt2 = bigtalk_get_ccons(fst.value);
       ccons nxt = bigtalk_get_ccons(nxt2.next);
       get_string_value(nxt.next, nameis);
       printf("%s", nameis);
+      if(strcmp(nameis,"print") == 0){
+	first_fcn = id;
+      }
+      
      
     }else if(fst.type == integer_type){
+      if(fst.value == 32){
+	thirtytwo = fst.id;
+      }
       printf("%i", fst.value);
     }else{
       printf("[%i(%i %i %i)]", fst.value, fst.type, fst.id, id);
@@ -234,8 +243,10 @@ void test_bigtalk(){
   assert(root != 0);
   //bigtalk_get_cons(bt, root);
   print_conses(root);
+  printf("\n first:");
+  print_conses(first_fcn);
   printf("\n");
-  ccons adding_cons = bigtalk_get_ccons(23);
+  ccons adding_cons = bigtalk_get_ccons(thirtytwo);
   while(adding_cons.next != 0){
     adding_cons = bigtalk_get_ccons(adding_cons.next);
   }
@@ -248,13 +259,13 @@ void test_bigtalk(){
   bigtalk_set_ccons(&adding_cons);
   print_conses(root);
   printf("\n");
-  bigtalk_eval(19);
+  bigtalk_eval(first_fcn);
   newcons.value = 112;
   bigtalk_set_ccons(&newcons);
-  bigtalk_eval(19);
+  bigtalk_eval(first_fcn);
   newcons.value = 113;
   bigtalk_set_ccons(&newcons);
-  bigtalk_eval(19);
+  bigtalk_eval(first_fcn);
   printf("\n");
   //a.print();
   printf("Bigtalk test PASS\n");

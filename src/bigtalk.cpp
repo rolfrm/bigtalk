@@ -113,27 +113,61 @@ void ast::print(){
 
 ast * ast::current;
 
-cons print_thing(cons args){
-  printf("hello world ");
-  while(args != ast::current->null){
-    cons val = args.get_value_as_cons();
+static void get_string_value(cons c, char * outbuffer){
+  size_t * buf = (size_t *) outbuffer;
+  while(c.get_index() != 0){
+    assert(c.get_type() == ast::current->string_type);
+    buf[0] = c.get_value();
+    buf++;
+    c = c.get_next();
+  }
+
+  buf[0] = 0;
+}
+
+void print_thing_inner(cons val){
+  
+  bool first = true;
+    
+  while(val.get_index() != 0){
+    if(first == false)
+      printf(" ");
+    first = false; 
     if(val.get_type() == ast::current->integer_type){
-      printf("%i ", val.get_value());
+      printf("%i", val.get_value());
+    }else if(val.get_type() == ast::current->string_type){
+      char buffer[100] = {0};
+      get_string_value(val, buffer);
+      printf("%s", buffer);
+      break;
+    }else if(val.get_type() == ast::current->string_ref_type){
+      printf("\"");
+      print_thing_inner(val.get_value_as_cons());
+      printf("\"");
+    }else if(val.get_type() == ast::current->cons_type){
+      printf("(");
+      print_thing_inner(val.get_value_as_cons());
+      printf(")");
     }else{
       printf("?? (%i)", val.get_type());
     }
-    args = args.get_next();
+    val = val.get_next();
   }
+}
+
+cons print_thing(cons val){
+  print_thing_inner(val);
   printf("\n");
   return ast::current->null;
 }
 
 cons add_things(cons args){
+  
   size_t sum = 0;
   while(args != ast::current->null){
-    cons val = args.get_value_as_cons();
-    if(val.get_type() == ast::current->integer_type){
-      sum += val.get_value();
+
+    if(args.get_type() == ast::current->integer_type){
+      sum += args.get_value();
     }else{
       throw new std::runtime_error("invalid value type for '+'");
     }
@@ -191,6 +225,7 @@ void ast::build(){
   names_last = names;
   fcn_type = add_cons();
   string_type = add_cons();
+  string_ref_type = add_cons();
   symbol_ref_type = add_cons();
   
   cons print_symbol = add_cons();
@@ -240,10 +275,15 @@ void ast::build(){
     code1.set_value(print_symbol);
     code1.set_type(symbol_ref_type);
 
+    cons code1_2 = add_cons();
+    code1_2.set_value(stringify("Hello world!"));
+    code1_2.set_type(string_ref_type);
+    code1.set_next(code1_2);
+
     cons code2 = add_cons();
     code2.set_value(123);
     code2.set_type(integer_type);
-    code1.set_next(code2);
+    code1_2.set_next(code2);
 
     cons code3 = add_cons();
     code3.set_value(1233);
@@ -276,7 +316,7 @@ void ast::build(){
     
     code4.set_next(code8);
     
-    eval(code1);
+    //eval(code1);
     root_add(code1);
 
   }catch (std::runtime_error e){
@@ -285,7 +325,7 @@ void ast::build(){
 }
 
 cons ast::eval(cons code){
-
+  
   cons fcn;
   if(code.get_type() == symbol_ref_type){
     fcn = code.get_value_as_cons().get_value_as_cons();
@@ -297,7 +337,8 @@ cons ast::eval(cons code){
     throw std::runtime_error("can only execute function types");
   }
   cons arg0 = null;
-  cons first = null;
+  cons arg;    
+  bool first = true;
   cons next = code.get_next();
   while(next != null){
     cons val;
@@ -306,20 +347,24 @@ cons ast::eval(cons code){
     }else{
       val = next;
     }
+    
+    if(first){
+      arg = add_cons();
+      arg0 = arg;
+      first = false;
+    }else{
+      cons newarg = add_cons();
+      arg.set_next(newarg);
+      arg = newarg;
+    }
 
-    cons arg = add_cons();
-
-    arg.set_value(val);
-    arg0.set_next(arg);
-    arg.set_type(cons_type);
-    if(first == null)
-      first = arg;
-    arg0 = arg;
+    arg.set_value(val.get_value());
+    arg.set_type(val.get_type());
     next = next.get_next();
   }
-  
   cons (* fptr)(cons args) = (cons (*)(cons args)) fcn.get_value();
-  return fptr(first);
+  cons r =  fptr(arg0);
+  return r;
 }
 
 bigtalk_context::~bigtalk_context(){
